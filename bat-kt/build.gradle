@@ -1,0 +1,21 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.1.61"
+}
+
+group = "hep.bat2"
+
+description = "Documentation and ext"
+
+repositories {
+    mavenCentral()
+}
+
+kotlin {
+    experimental {
+        coroutines "enable"
+    }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
+}
