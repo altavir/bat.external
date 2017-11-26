@@ -1,6 +1,14 @@
 package hep.bat2
 
-import kotlin.coroutines.experimental.buildSequence
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.channels.ProducerJob
+import kotlinx.coroutines.experimental.channels.produce
+import kotlin.coroutines.experimental.CoroutineContext
+
+/**
+ * Kotlin based MC integrator
+ * @author Alexander Nozik
+ */
 
 /**
  * A single sample
@@ -15,31 +23,37 @@ interface Sampler<T> {
      * Generate next sample
      * @param prev previous sample. If null, generate independent sample
      */
-    fun next(prev: Sample<T>? = null): Sample<T>
+    suspend fun next(prev: Sample<T>? = null): Sample<T>
 
     /**
      * Convert this sampler to infinite lazy sequence using coroutines
      */
-    fun asSequence(): Sequence<Sample<T>> {
-        return buildSequence {
+    fun <R> asProducer(dispatcher: CoroutineContext = CommonPool, capacity: Int = 10000, transform: suspend (Sample<T>) -> R): ProducerJob<R> {
+        return produce<R>(context = dispatcher, capacity = capacity) {
             var last: Sample<T> = next(null)
             while (true) {
-                yield(last)
+                send(transform(last))
                 last = next(last);
             }
         }
     }
 }
 
-interface Model<T>{
-    operator fun invoke(sample: Sample<T>): Number
-}
+abstract class MCIntegrator<T, R> : Integrator<T> {
 
-abstract class MCIntegrator<T> : Integrator<T> {
+    /**
+     * Monte-Carlo model
+     * @param T sample type
+     * @param R intermediate result of model application to sample
+     */
+    interface Model<T, out R> {
+        suspend operator fun invoke(sample: Sample<T>): R
+    }
+
     /**
      * Build objective functions from parameters
      */
-    protected abstract fun buildModel(integrand: Integrand<T>): Model<T>
+    protected abstract fun buildModel(integrand: Integrand<T>): Model<T, R>
 
     /**
      * build Sampler
@@ -47,12 +61,19 @@ abstract class MCIntegrator<T> : Integrator<T> {
     protected abstract fun buildSampler(integrand: Integrand<T>): Sampler<T>
 
     /**
-     * Use integrated value to produce result
+     * Can later add debug hooks here
      */
-    protected abstract fun reduce(integrand: Integrand<T>, integral: Number): Integrand<T>
+    protected open suspend fun Integrand<T>.map(model: Model<T, R>, sample: Sample<T>): R {
+        return model(sample)
+    }
 
-    private val Integrand<T>.model: Model<T>
-        get() = opt("model") as Model<T>? ?: buildModel(this)
+    /**
+     * Generate integration result from lazy sequence. Sequence is considered to end when null is returned
+     */
+    protected suspend abstract fun Integrand<T>.reduce(values: ProducerJob<R>): Integrand<T>
+
+    private val Integrand<T>.model: Model<T, R>
+        get() = opt("model") as Model<T, R>? ?: buildModel(this)
 
     private val Integrand<T>.sampleSize: Int
         get() = opt("sampleSize") as Int? ?: 10000
@@ -60,8 +81,10 @@ abstract class MCIntegrator<T> : Integrator<T> {
     private val Integrand<T>.sampler: Sampler<T>
         get() = opt("sampler") as Sampler<T>? ?: buildSampler(this)
 
-    override fun integrate(integrand: Integrand<T>): Integrand<T> {
-        TODO()
+    override suspend fun integrate(integrand: Integrand<T>): Integrand<T> {
+        val model = integrand.model
+        val producer = integrand.sampler.asProducer { integrand.map(model, it) }
+        return integrand.reduce(producer)
     }
 
 }

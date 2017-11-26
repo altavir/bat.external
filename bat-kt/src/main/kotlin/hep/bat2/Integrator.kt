@@ -35,12 +35,12 @@ interface Integrator<T> {
     /**
      * Perform integration using given integrand
      */
-    fun integrate(integrand: Integrand<T>): Integrand<T>;
+    suspend fun integrate(integrand: Integrand<T>): Integrand<T>;
 
     /**
      * A shortcut call to perform single integration operation with given parameters
      */
-    fun integrate(parameters: Map<String, Any>): T? {
+    suspend fun integrate(parameters: Map<String, Any>): T? {
         return integrate(buildIntegrand(parameters)).value
     }
 }
