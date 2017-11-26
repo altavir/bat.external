@@ -31,22 +31,34 @@ interface Sampler<T> {
     }
 }
 
+interface Model<T>{
+    operator fun invoke(sample: Sample<T>): Number
+}
+
 abstract class MCIntegrator<T> : Integrator<T> {
     /**
      * Build objective functions from parameters
      */
-    protected abstract fun buildModel(parameters: Parameters): NFunction
+    protected abstract fun buildModel(integrand: Integrand<T>): Model<T>
 
-    protected abstract fun buildSampler(integrand: Integrand<NFunction>): Sampler<T>
+    /**
+     * build Sampler
+     */
+    protected abstract fun buildSampler(integrand: Integrand<T>): Sampler<T>
 
-    private val Integrand<NFunction>.model: NFunction
-        get() = this["model"] as NFunction
+    /**
+     * Use integrated value to produce result
+     */
+    protected abstract fun reduce(integrand: Integrand<T>, integral: Number): Integrand<T>
 
-    private val Integrand<NFunction>.sampleSize: Int
-        get() = this["sampleSize"] as Int
+    private val Integrand<T>.model: Model<T>
+        get() = opt("model") as Model<T>? ?: buildModel(this)
 
-    private val Integrand<NFunction>.sampler: Sampler<T>
-        get() = this["sampleSize"] as Sampler<T>
+    private val Integrand<T>.sampleSize: Int
+        get() = opt("sampleSize") as Int? ?: 10000
+
+    private val Integrand<T>.sampler: Sampler<T>
+        get() = opt("sampler") as Sampler<T>? ?: buildSampler(this)
 
     override fun integrate(integrand: Integrand<T>): Integrand<T> {
         TODO()
