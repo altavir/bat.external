@@ -1,1 +1,8 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.2.0" apply false
+}
+
+
 group = "hep.bat2"
+
+version = "0.1.0 - SNAPSHOT"

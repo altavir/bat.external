@@ -1,4 +1,5 @@
 rootProject.name = 'bat.external'
 
-include ":bat-kt"
+include ":kt-server"
+include ":kt-base"
 

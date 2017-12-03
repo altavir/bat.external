@@ -1,0 +1,14 @@
+group "hep.bat2"
+
+description "Common multi-platform base for both client and server APIs"
+
+apply plugin: 'kotlin-platform-common'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test-common:$kotlin_version"
+}
