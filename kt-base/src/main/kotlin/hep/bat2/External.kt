@@ -103,11 +103,32 @@ abstract class Matrix : Parameter() {
 
 }
 
-typealias Parameters = Map<String, Parameter>
+/**
+ * A container for parameters of task or task result
+ */
+class Parameters {
+    private val parameters: MutableMap<String, MutableSet<Parameter>> = HashMap();
+
+    fun put(role: String, parameter: Parameter) {
+        parameters.getOrElse(role) { HashSet() }.add(parameter)
+    }
+
+    fun setAll(map: Map<String, Parameter>) {
+        map.forEach { put(it.key, it.value) }
+    }
+
+    fun putAll(params: Parameters) {
+        params.parameters.forEach { this.parameters.getOrElse(it.key) { HashSet() }.addAll(it.value) }
+    }
+
+    operator fun get(role: String): Set<Parameter> {
+        return parameters[role] ?: emptySet()
+    }
+}
 
 /**
  * General representation of server which could execute a string command with paramters
  */
-interface Server {
-    operator fun invoke(command: String, params: Parameters): Parameters
+interface External {
+    operator fun invoke(task: String, params: Parameters): Parameters
 }

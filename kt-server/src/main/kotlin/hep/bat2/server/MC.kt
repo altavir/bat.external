@@ -1,9 +1,9 @@
 package hep.bat2.server
 
 import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.channels.ProducerJob
-import kotlinx.coroutines.experimental.channels.produce
+import kotlinx.coroutines.experimental.async
 import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.experimental.buildSequence
 
 /**
  * Kotlin based MC integrator
@@ -13,10 +13,11 @@ import kotlin.coroutines.experimental.CoroutineContext
 /**
  * A single sample
  */
-data class Sample<T>(val value: T, val weight: Double)
+data class Sample<out T>(val value: T, val weight: Double)
 
 /**
  * Sample generator
+ * @param T the type of sample value
  */
 interface Sampler<T> {
     /**
@@ -28,18 +29,25 @@ interface Sampler<T> {
     /**
      * Convert this sampler to infinite lazy sequence using coroutines
      */
-    fun <R> asProducer(dispatcher: CoroutineContext = CommonPool, capacity: Int = 10000, transform: suspend (Sample<T>) -> R): ProducerJob<R> {
-        return produce<R>(context = dispatcher, capacity = capacity) {
-            var last: Sample<T> = next(null)
-            while (true) {
-                send(transform(last))
-                last = next(last);
+    fun <R> asSequence(dispatcher: CoroutineContext = CommonPool, capacity: Int = 10000, transform: suspend (Sample<T>) -> R): Sequence<R> {
+        return buildSequence {
+            async {
+                var last: Sample<T> = next(null)
+                while (true) {
+                    yield(transform(last))
+                    last = next(last);
+                }
             }
         }
     }
+
 }
 
-abstract class MCIntegrator<T, R> : Integrator<T> {
+/**
+ * @param T the type of sample value
+ * @param R the type of model computation result
+ */
+abstract class MCIntegrator<T, R> : Integrator<R> {
 
     /**
      * Monte-Carlo model
@@ -53,38 +61,55 @@ abstract class MCIntegrator<T, R> : Integrator<T> {
     /**
      * Build objective functions from parameters
      */
-    protected abstract fun buildModel(integrand: Integrand<T>): Model<T, R>
+    protected abstract fun buildModel(integrand: Integrand<R>): Model<T, R>
 
     /**
      * build Sampler
      */
-    protected abstract fun buildSampler(integrand: Integrand<T>): Sampler<T>
+    protected abstract fun buildSampler(integrand: Integrand<R>): Sampler<T>
 
     /**
      * Can later add debug hooks here
      */
-    protected open suspend fun Integrand<T>.map(model: Model<T, R>, sample: Sample<T>): R {
+    protected open suspend fun Integrand<R>.map(model: Model<T, R>, sample: Sample<T>): R {
         return model(sample)
     }
 
     /**
      * Generate integration result from lazy sequence. Sequence is considered to end when null is returned
      */
-    protected suspend abstract fun Integrand<T>.reduce(values: ProducerJob<R>): Integrand<T>
+    protected suspend abstract fun Integrand<R>.reduce(values: Sequence<R>): Integrand<R>
 
-    private val Integrand<T>.model: Model<T, R>
-        get() = opt("model") as Model<T, R>? ?: buildModel(this)
+    private val Integrand<R>.model: Model<T, R>
+        get() = opt("model", Model::class.java) as Model<T, R>? ?: buildModel(this)
 
-    protected val Integrand<T>.sampleSize: Int
-        get() = opt("sampleSize") as Int? ?: 10000
+    protected val Integrand<R>.sampleSize: Int
+        get() = opt("sampleSize", Int::class.java) ?: 10000
 
-    private val Integrand<T>.sampler: Sampler<T>
-        get() = opt("sampler") as Sampler<T>? ?: buildSampler(this)
+    private val Integrand<R>.sampler: Sampler<T>
+        get() = opt("sampler", Sampler::class.java) as Sampler<T>? ?: buildSampler(this)
 
-    override suspend fun integrate(integrand: Integrand<T>): Integrand<T> {
-        val model = integrand.model
-        val producer = integrand.sampler.asProducer { integrand.map(model, it) }
-        return integrand.reduce(producer)
+    override suspend fun integrate(integrand: Integrand<R>): Integrand<R> {
+        val sequence = integrand.sampler.asSequence { integrand.map(integrand.model, it) }
+        return integrand.reduce(sequence)
     }
+}
+
+typealias Vector = DoubleArray
+
+class RealSpaceMCIntegrator : MCIntegrator<Vector, Double>() {
+    override fun buildModel(integrand: Integrand<Double>): Model<Vector, Double> {
+        TODO()
+    }
+
+    override fun buildSampler(integrand: Integrand<Double>): Sampler<Vector> {
+        TODO()
+    }
+
+    suspend override fun Integrand<Double>.reduce(values: Sequence<Double>): Integrand<Double> {
+        val res = values.average();
+        return Integrand(res, this.parameters);
+    }
+
 
 }
