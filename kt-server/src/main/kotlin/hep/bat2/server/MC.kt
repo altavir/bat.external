@@ -1,7 +1,13 @@
 package hep.bat2.server
 
+import hep.bat2.Matrix
+import hep.bat2.Parameters
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
+import org.apache.commons.math3.distribution.MultivariateNormalDistribution
+import org.apache.commons.math3.distribution.MultivariateRealDistribution
+import org.apache.commons.math3.random.MersenneTwister
+import org.apache.commons.math3.random.SynchronizedRandomGenerator
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
 
@@ -29,12 +35,12 @@ interface Sampler<T> {
     /**
      * Convert this sampler to infinite lazy sequence using coroutines
      */
-    fun <R> asSequence(dispatcher: CoroutineContext = CommonPool, capacity: Int = 10000, transform: suspend (Sample<T>) -> R): Sequence<R> {
+    fun <R> apply(dispatcher: CoroutineContext = CommonPool, transform: suspend (Sample<T>) -> R): Sequence<Pair<Sample<T>, R>> {
         return buildSequence {
             async {
                 var last: Sample<T> = next(null)
                 while (true) {
-                    yield(transform(last))
+                    yield(Pair(last, transform(last)))
                     last = next(last);
                 }
             }
@@ -78,7 +84,7 @@ abstract class MCIntegrator<T, R> : Integrator<R> {
     /**
      * Generate integration result from lazy sequence. Sequence is considered to end when null is returned
      */
-    protected suspend abstract fun Integrand<R>.reduce(values: Sequence<R>): Integrand<R>
+    protected suspend abstract fun Integrand<R>.reduce(sequence: Sequence<Pair<Sample<T>, R>>): Integrand<R>
 
     private val Integrand<R>.model: Model<T, R>
         get() = opt("model", Model::class.java) as Model<T, R>? ?: buildModel(this)
@@ -90,24 +96,57 @@ abstract class MCIntegrator<T, R> : Integrator<R> {
         get() = opt("sampler", Sampler::class.java) as Sampler<T>? ?: buildSampler(this)
 
     override suspend fun integrate(integrand: Integrand<R>): Integrand<R> {
-        val sequence = integrand.sampler.asSequence { integrand.map(integrand.model, it) }
+        val sequence = integrand.sampler.apply { integrand.map(integrand.model, it) }
         return integrand.reduce(sequence)
     }
 }
 
 typealias Vector = DoubleArray
 
+
+class ImportanceSampler(val distribution: MultivariateRealDistribution) : Sampler<Vector> {
+    suspend override fun next(prev: Sample<Vector>?): Sample<Vector> {
+        val vector = distribution.sample()
+        val weight = 1.0 / distribution.density(vector)
+        return Sample(vector, weight);
+    }
+}
+
+/**
+ * Build a model from parameters
+ */
+internal fun buildRealSpaceModel(parameters: Parameters): MCIntegrator.Model<Vector, Double> {
+    TODO()
+}
+
+internal fun buildRealSpaceSampler(parameters: Parameters): Sampler<Vector> {
+    //synchronized mersenne-twister generator
+    val generator = SynchronizedRandomGenerator(MersenneTwister())
+    return when {
+        parameters.has("covariance", Matrix::class.java) -> {
+            val covariance = parameters.get("covariance", Matrix::class.java)
+            if (covariance.columnsNum != covariance.rowsNum) {
+                throw RuntimeException("Covariance matrix dimension mismatch")
+            }
+            val center = DoubleArray(covariance.columnsNum) { 0.0 }
+            val covArray = covariance.toDoubleArray()
+            ImportanceSampler(MultivariateNormalDistribution(center,covArray))
+        }
+        else -> throw RuntimeException("Can't create sampler from parameters")
+    }
+}
+
 class RealSpaceMCIntegrator : MCIntegrator<Vector, Double>() {
     override fun buildModel(integrand: Integrand<Double>): Model<Vector, Double> {
-        TODO()
+        return buildRealSpaceModel(integrand.parameters)
     }
 
     override fun buildSampler(integrand: Integrand<Double>): Sampler<Vector> {
-        TODO()
+        return buildRealSpaceSampler(integrand.parameters)
     }
 
-    suspend override fun Integrand<Double>.reduce(values: Sequence<Double>): Integrand<Double> {
-        val res = values.average();
+    suspend override fun Integrand<Double>.reduce(sequence: Sequence<Pair<Sample<Vector>, Double>>): Integrand<Double> {
+        val res = sequence.take(sampleSize).map { it.second / it.first.weight }.average()
         return Integrand(res, this.parameters);
     }
 

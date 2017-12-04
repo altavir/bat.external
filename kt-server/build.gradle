@@ -12,6 +12,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile project(":kt-base")
     compile 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:0.19.3'
+    compile 'org.apache.commons:commons-math3:3.6.1'
     testCompile "junit:junit:4.12"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
