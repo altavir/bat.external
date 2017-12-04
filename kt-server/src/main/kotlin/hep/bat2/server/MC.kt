@@ -1,6 +1,7 @@
 package hep.bat2.server
 
 import hep.bat2.Matrix
+import hep.bat2.NFunction
 import hep.bat2.Parameters
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
@@ -103,6 +104,7 @@ abstract class MCIntegrator<T, R> : Integrator<R> {
 
 typealias Vector = DoubleArray
 
+//samplers
 
 class ImportanceSampler(val distribution: MultivariateRealDistribution) : Sampler<Vector> {
     suspend override fun next(prev: Sample<Vector>?): Sample<Vector> {
@@ -112,11 +114,23 @@ class ImportanceSampler(val distribution: MultivariateRealDistribution) : Sample
     }
 }
 
+//models
+
+class FunctionModel(val function: NFunction) : MCIntegrator.Model<Vector, Double> {
+    suspend override fun invoke(sample: Sample<Vector>): Double {
+        return function.value(sample.value.asList()).toDouble()
+    }
+}
+
 /**
  * Build a model from parameters
  */
 internal fun buildRealSpaceModel(parameters: Parameters): MCIntegrator.Model<Vector, Double> {
-    TODO()
+    return when {
+        parameters.has("objectiveFunction", NFunction::class.java) ->
+            FunctionModel(parameters.get("objectiveFunction", NFunction::class.java))
+        else -> throw RuntimeException("Can't create model from parameters")
+    }
 }
 
 internal fun buildRealSpaceSampler(parameters: Parameters): Sampler<Vector> {
@@ -130,7 +144,7 @@ internal fun buildRealSpaceSampler(parameters: Parameters): Sampler<Vector> {
             }
             val center = DoubleArray(covariance.columnsNum) { 0.0 }
             val covArray = covariance.toDoubleArray()
-            ImportanceSampler(MultivariateNormalDistribution(center,covArray))
+            ImportanceSampler(MultivariateNormalDistribution(generator, center, covArray))
         }
         else -> throw RuntimeException("Can't create sampler from parameters")
     }
