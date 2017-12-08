@@ -1,0 +1,34 @@
+Name:           toy-language
+Version:        0.1
+Synopsis:       Simple DSL for pobabilistic programming
+Description:
+  It's very simple DSL for figuring out typeing rules semantics and
+  desired representations of model, data, and API for inference. 
+
+Cabal-Version:  >= 1.10
+License:        BSD3
+License-File:   LICENSE
+Author:         Aleksey Khudyakov <alexey.skladnoy@gmail.com>
+Maintainer:     Aleksey Khudyakov <alexey.skladnoy@gmail.com>
+Homepage:       http://bitbucket.org/Shimuuar/toy-language
+Category:       Data
+Build-Type:     Simple
+
+Library
+  Ghc-options:          -Wall
+  Default-Language:    Haskell2010
+  Build-Depends:       base >=4 && <5
+                     , containers
+                     , mtl            >= 2.2
+                     , transformers   >= 0.5
+                     , statistics     >= 0.14.0.2
+                     , mwc-random     >= 0.13.6
+                     , histogram-fill >= 0.8.4
+                     --
+                     , hep-root-plot
+  Exposed-modules:
+                  BAT.AST
+                  BAT.Algorithms
+                  BAT.Types
+                  BAT.Typecheck
+                  BAT.Interpreter.MH

@@ -18,3 +18,9 @@ gradle-app.setting
 *.log
 *.bbl
 *.blg
+
+# Haskell-specific bits
+toy-language/dist-newstyle/
+toy-language/dist/
+toy-language/TAGS
+toy-language/.ghc*
