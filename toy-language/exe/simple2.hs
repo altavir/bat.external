@@ -7,8 +7,6 @@ import qualified HEP.ROOT.Plot as HEP
 import BAT.AST
 import BAT.Interpreter.MH
 
-
-
 ----------------------------------------------------------------
 -- Model description
 --------------------
@@ -83,5 +81,3 @@ main = do
             HEP.add $ HEP.hist lam2D
             HEP.set $ HEP.histOpt $ HEP.histColor HEP.ON
             return ()
-  --
-  return ()
