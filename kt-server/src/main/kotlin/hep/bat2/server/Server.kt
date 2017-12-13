@@ -1,9 +1,9 @@
 package hep.bat2.server
 
-import hep.bat2.AmbiguousParameterException
-import hep.bat2.External
-import hep.bat2.Parameters
-import hep.bat2.TaskNotSupportedException
+import hep.bat2.api.AmbiguousParameterException
+import hep.bat2.api.External
+import hep.bat2.api.Parameters
+import hep.bat2.api.TaskNotSupportedException
 
 enum class Task {
     INTEGRATE

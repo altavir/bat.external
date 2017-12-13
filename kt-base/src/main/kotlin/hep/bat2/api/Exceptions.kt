@@ -1,4 +1,4 @@
-package hep.bat2
+package hep.bat2.api
 
 class TaskNotSupportedException(val task: String, message: String = "") : RuntimeException(message);
 

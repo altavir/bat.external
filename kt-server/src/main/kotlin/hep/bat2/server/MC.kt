@@ -1,8 +1,8 @@
 package hep.bat2.server
 
-import hep.bat2.Matrix
-import hep.bat2.NFunction
-import hep.bat2.Parameters
+import hep.bat2.api.Matrix
+import hep.bat2.api.NFunction
+import hep.bat2.api.Parameters
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution

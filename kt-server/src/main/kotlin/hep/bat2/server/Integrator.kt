@@ -1,7 +1,7 @@
 package hep.bat2.server
 
-import hep.bat2.ParameterNotFoundException
-import hep.bat2.Parameters
+import hep.bat2.api.ParameterNotFoundException
+import hep.bat2.api.Parameters
 
 
 /**

@@ -1,7 +1,7 @@
 package hep.bat2.server
 
-import hep.bat2.Matrix
-import hep.bat2.Numeric
+import hep.bat2.api.Matrix
+import hep.bat2.api.Numeric
 
 fun Matrix.toArray(): Array<Array<Numeric>> {
     return Array(columnsNum) { i ->

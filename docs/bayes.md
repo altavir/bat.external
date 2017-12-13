@@ -9,7 +9,6 @@ bibliography:
 title: Short and incomplete history of practical Bayesian inference
 ---
 
-\maketitle
 Introduction
 ============
 
@@ -32,9 +31,11 @@ above to update our knowledge about system. If for example $\theta$ is
 set of parameters we want to estimate and $X$ is experimental data we
 can replace $A$ with $\theta$ and $B$ with $X$ getting:
 
-$$p(\theta|X)
+$$
+p(\theta|X)
   = \frac{p(X|\theta)p(\theta)}{p(X)}
-  = \frac{p(X|\theta)p(\theta)}{\int d\theta\, p(X|\theta)p(\theta)}$$
+  = \frac{p(X|\theta)p(\theta)}{\int d\theta\, p(X|\theta)p(\theta)}
+$$
 
 Unfortunately integral in the denominator is not analytically tractable
 in most cases. So one either limited to conjugated priors[^1] or have to
