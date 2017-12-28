@@ -6,11 +6,13 @@ import hep.bat2.api.*
  * Common implementation of parameters in Kotlin
  */
 
-class KParameters(private val map: Map<String, MutableSet<Parameter>>) : Parameters {
+class KParameters(private val map: Map<String, Collection<Parameter>>) : Parameters {
+
+    constructor(vararg pairs: Pair<String, Parameter>) : this(mapOf(*pairs.map { Pair(it.first, setOf(it.second)) }.toTypedArray()))
 
     override val roles: Array<String> = map.keys.toTypedArray()
 
-    override operator fun get(role: String): Set<Parameter> {
+    override operator fun get(role: String): Collection<Parameter> {
         return map[role] ?: emptySet()
     }
 }
@@ -64,9 +66,16 @@ class KMatrix(
 }
 
 class KTree(private val map: Map<String, Value>) : Tree() {
+
+    constructor(vararg pairs: Pair<String, Value>) : this(mapOf(*pairs))
+
     override val keys: List<String> = map.keys.toList()
 
-    override fun get(key: String): Value {
-        return map[key] ?: throw ParameterNotFoundException(key)
+    override fun get(key: String): Value? {
+        return map[key]
+    }
+
+    override fun getNode(key: String): Tree? {
+        return KTree(map.filterKeys { it.startsWith("$key.") })
     }
 }

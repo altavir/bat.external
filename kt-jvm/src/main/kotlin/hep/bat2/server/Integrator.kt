@@ -2,6 +2,7 @@ package hep.bat2.server
 
 import hep.bat2.api.ParameterNotFoundException
 import hep.bat2.api.Parameters
+import hep.bat2.impl.plus
 
 
 /**
@@ -29,7 +30,7 @@ interface Integrator<R> {
      * @param integrand previously used integrand if it exists
      */
     fun buildIntegrand(parameters: Parameters, integrand: Integrand<R>? = null): Integrand<R> {
-        val map = integrand?.parameters?.apply { putAll(parameters) } ?: parameters
+        val map = integrand?.parameters?.plus(parameters) ?: parameters
         return Integrand(integrand?.value, map)
     }
 

@@ -1,8 +1,8 @@
 package hep.bat2.server
 
 import hep.bat2.api.AmbiguousParameterException
-import hep.bat2.api.External
 import hep.bat2.api.Parameters
+import hep.bat2.api.Server
 import hep.bat2.api.TaskNotSupportedException
 
 enum class Task {
@@ -27,8 +27,8 @@ fun Parameters.has(role: String, type: Class<*>): Boolean {
     return get(role).find { type.isInstance(it) } != null
 }
 
-class Server : External {
-    override fun invoke(task: String, params: Parameters): Parameters {
+class Server : Server {
+    override fun run(task: String, params: Parameters): Parameters {
         when (task.toUpperCase()) {
             Task.INTEGRATE.name -> return integrate(params)
             else -> throw TaskNotSupportedException(task)

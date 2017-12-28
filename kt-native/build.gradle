@@ -1,0 +1,29 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url  "https://dl.bintray.com/jetbrains/kotlin-native-dependencies"
+        }
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-native-gradle-plugin:0.5"
+    }
+}
+
+group 'hep.bat2'
+version '0.1.0 - SNAPSHOT'
+
+apply plugin: 'konan'
+apply plugin: 'idea'
+
+idea {
+    module {
+        sourceDirs += file('src/main/kotlin')
+    }
+}
+
+konanArtifacts {
+    interop('stdio')
+    library('bat')
+}

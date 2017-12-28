@@ -139,10 +139,10 @@ internal fun buildRealSpaceSampler(parameters: Parameters): Sampler<Vector> {
     return when {
         parameters.has("covariance", Matrix::class.java) -> {
             val covariance = parameters.get("covariance", Matrix::class.java)
-            if (covariance.columnsNum != covariance.rowsNum) {
+            if (covariance.columnsDimension != covariance.rowsDimension) {
                 throw RuntimeException("Covariance matrix dimension mismatch")
             }
-            val center = DoubleArray(covariance.columnsNum) { 0.0 }
+            val center = DoubleArray(covariance.columnsDimension) { 0.0 }
             val covArray = covariance.toDoubleArray()
             ImportanceSampler(MultivariateNormalDistribution(generator, center, covArray))
         }

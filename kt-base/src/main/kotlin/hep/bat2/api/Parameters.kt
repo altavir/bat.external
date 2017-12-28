@@ -111,8 +111,20 @@ abstract class VectorFunction : Parameter() {
  * Tree of values
  */
 abstract class Tree : Parameter() {
+    /**
+     * The list of keys present in this tree
+     */
     abstract val keys: List<String>
-    abstract operator fun get(key: String): Value
+
+    /**
+     * Get a specific value from the tree if it is present
+     */
+    abstract operator fun get(key: String): Value?
+
+    /**
+     * Get a specific node if it is present
+     */
+    abstract fun getNode(key: String): Tree?
 }
 
 /**
@@ -144,7 +156,7 @@ abstract class Matrix : Parameter() {
 /**
  * A container for parameters of task or task result
  */
-interface Parameters  {
+interface Parameters {
     /**
      * The list of roles which are provided by this parameter list
      */
@@ -153,6 +165,6 @@ interface Parameters  {
     /**
      * Get the set of parameters corresponding to given role
      */
-    operator fun get(role: String): Set<Parameter>
+    operator fun get(role: String): Collection<Parameter>
 }
 

@@ -1,5 +1,6 @@
 rootProject.name = 'bat.external'
 
-include ":kt-server"
+include ":kt-jvm"
 include ":kt-base"
+include ':kt-native'
 
