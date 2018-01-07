@@ -1,0 +1,28 @@
+plugins {
+    id 'c'
+}
+
+model {
+    components {
+        parameters(NativeLibrarySpec) {
+            sources {
+                c {
+                    source {
+                        srcDir "src/main/c/"
+                        include "**/*.c"
+                    }
+
+                    exportedHeaders {
+                        srcDir "src/main/c/"
+                        include "**/*.h"
+                    }
+                }
+            }
+        }
+    }
+    toolChains{
+        mingw(Gcc){
+            path minGWPath
+        }
+    }
+}

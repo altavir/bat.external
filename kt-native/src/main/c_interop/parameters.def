@@ -1,0 +1,3 @@
+headers = D:/Work/bat.external/c-base/src/main/c/server.h
+headerFilter = D:/Work/bat.external/c-base/src/main/c/**
+compilerOpts = -std=c11
