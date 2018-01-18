@@ -44,7 +44,7 @@ Tree emptyTree() {
     return tree;
 }
 
-Tree append(Tree tree, TreeEntry entry) {
+Tree appendValue(Tree tree, TreeEntry entry) {
     tree.size++;
     tree.entries = realloc(tree.entries, tree.size * sizeof(TreeEntry));
     tree.entries[tree.size - 1] = entry;
@@ -52,19 +52,19 @@ Tree append(Tree tree, TreeEntry entry) {
 }
 
 Tree appendInt(Tree tree, String key, const int value) {
-    return append(tree, buildIntValue(key, value));
+    return appendValue(tree, buildIntValue(key, value));
 }
 
 Tree appendDouble(Tree tree, String key, const double value) {
-    return append(tree, buildDoubleValue(key, value));
+    return appendValue(tree, buildDoubleValue(key, value));
 }
 
 Tree appendBoolean(Tree tree, String key, const Boolean value) {
-    return append(tree, buildBooleanValue(key, value));
+    return appendValue(tree, buildBooleanValue(key, value));
 }
 
 Tree appendString(Tree tree, String key, String value) {
-    return append(tree, buildStringValue(key, value));
+    return appendValue(tree, buildStringValue(key, value));
 }
 
 Tree appendNode(Tree tree, String key, Tree node) {
@@ -77,7 +77,7 @@ Tree appendNode(Tree tree, String key, Tree node) {
         strcpy(newEntry.key, key);
         strcat(newEntry.key, ".");
         strcat(newEntry.key, oldEntry.key);
-        append(tree, newEntry);
+        appendValue(tree, newEntry);
     }
     return tree;
 }
@@ -100,6 +100,10 @@ Matrix buildMatrix(short rows, String *rowNames, short columns, String *columnNa
     return matrix;
 }
 
+Function buildFunction(double (*func)(double)) {
+    return func;
+}
+
 NFunction buildNFunction(short size, String *names, double (*func)(Vector)) {
     NFunction nFunction;
     nFunction.size = size;
@@ -108,8 +112,12 @@ NFunction buildNFunction(short size, String *names, double (*func)(Vector)) {
     return nFunction;
 }
 
-Mapping
-buildMapping(short inputSize, String *inputNames, short outputSize, String *outputNames, Vector (*func)(Vector)) {
+Mapping buildMapping(
+        short inputSize,
+        String *inputNames,
+        short outputSize,
+        String *outputNames,
+        Vector (*func)(Vector)) {
     Mapping vectorFunction;
     vectorFunction.inputSize = inputSize;
     vectorFunction.inputNames = inputNames;
@@ -117,6 +125,13 @@ buildMapping(short inputSize, String *inputNames, short outputSize, String *outp
     vectorFunction.outputNames = outputNames;
     vectorFunction.func = func;
     return vectorFunction;
+}
+
+Blob buildBlob(unsigned long size, unsigned char *data) {
+    Blob result;
+    result.size = size;
+    result.data = data;
+    return result;
 }
 
 Parameters emptyParameters() {
@@ -180,5 +195,76 @@ Parameters appendMapping(Parameters parameters, String role, Mapping value) {
     entry.par.mappingValue = value;
     return appendParameterEntry(parameters, entry);
 }
+
+
+Parameters appendBlob(Parameters parameters, String role, Blob blob) {
+    ParameterEntry entry;
+    entry.role = role;
+    entry.type = BLOB;
+    entry.par.blobValue = blob;
+    return appendParameterEntry(parameters, entry);
+}
+
+/**
+ * Free memory allocated by list of strings
+ * @param strings
+ * @param size
+ */
+void freeStrings(String *strings, short size) {
+    if (strings != NULL) {
+        for (int i = 0; i < size; ++i) {
+            free(strings[i]);
+        }
+        free(strings);
+    }
+}
+
+void freeParameter(ParameterEntry par) {
+    switch (par.type) {
+        case TREE:
+            for (int i = 0; i < par.par.treeValue.size; ++i) {
+                TreeEntry entry = par.par.treeValue.entries[i];
+                //TODO allocate values on heap?
+                if(entry.type == STRING){
+                    free(entry.value.stringValue);
+                }
+                free(entry.key);
+            }
+            break;
+        case VECTOR:
+            free(par.par.vectorValue.values);
+            freeStrings(par.par.vectorValue.names, par.par.vectorValue.size);
+            break;
+        case MATRIX:
+            free(par.par.matrixValue.values);
+            freeStrings(par.par.matrixValue.columnNames, par.par.matrixValue.columns);
+            freeStrings(par.par.matrixValue.rowNames, par.par.matrixValue.rows);
+            break;
+        case FUNCTION:
+            free(par.par.functionValue);
+            break;
+        case N_FUNCTION:
+            freeStrings(par.par.nFunctionValue.names, par.par.nFunctionValue.size);
+            free(par.par.nFunctionValue.func);
+            break;
+        case MAPPING:
+            freeStrings(par.par.mappingValue.inputNames, par.par.mappingValue.inputSize);
+            freeStrings(par.par.mappingValue.outputNames, par.par.mappingValue.outputSize);
+            free(par.par.mappingValue.func);
+            break;
+        case BLOB:
+            free(par.par.blobValue.data);
+            break;
+    }
+    free(par.role);
+}
+
+void freeParameters(Parameters pars) {
+    for (int i = 0; i < pars.size; ++i) {
+        freeParameter(pars.entries[i]);
+    }
+    free(pars.entries);
+}
+
 
 //TODO all allocation is done on stack. Is it good?

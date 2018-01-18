@@ -1,3 +1,6 @@
+#ifndef C_BASE_SERVER_H
+#define C_BASE_SERVER_H
+
 #include "parameters.h"
 
 /**
@@ -29,3 +32,5 @@ typedef struct {
  * @return
  */
 StringList tasks();
+
+#endif //C_BASE_SERVER_H

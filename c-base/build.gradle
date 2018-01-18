@@ -1,6 +1,17 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.ysb33r.gradle:doxygen:0.4'
+    }
+}
+
 plugins {
     id 'c'
 }
+
+apply plugin : 'org.ysb33r.doxygen'
 
 model {
     components {
@@ -25,4 +36,13 @@ model {
             path minGWPath
         }
     }
+}
+
+doxygen {
+    executables {
+        doxygen version : '1.8.14'
+    }
+    generate_html true
+
+    source new File(projectDir,'src/main/c')
 }

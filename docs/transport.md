@@ -55,11 +55,3 @@ to return the list of supported tasks.
 
 ### Entity references
 **TODO**
-
-### Echo server
-
-Echo (task name `echo`) is a test task for compatibility checks. It returns the same parameters it received plus
-additional tree called `result`, which contains a node for each of received parameters with the same name as a role of 
-the parameter.
-
-**TODO: update echo specification**

@@ -3,7 +3,6 @@
 //
 #include "server.h"
 #include "builders.h"
-#include "parameters.h"
 
 
 /**
@@ -13,10 +12,11 @@ String echoTask = "echo";
 
 Parameters call(String task, Parameters parameters) {
     Tree tree = emptyTree();
+    Parameters result = emptyParameters();
 
     for (int i = 0; i < parameters.size; i++) {
         ParameterEntry entry = parameters.entries[i];
-        append(tree, entry);
+        appendParameterEntry(result, entry);
         switch (entry.type) {
             case TREE:
                 appendNode(tree, entry.role, entry.par.treeValue);
@@ -36,10 +36,13 @@ Parameters call(String task, Parameters parameters) {
             case MAPPING:
                 appendString(tree, entry.role, "mapping");
                 break;
+            case BLOB:
+                appendString(tree, entry.role, "blob");
+                break;
         }
     }
 
-    Parameters result = appendTree(emptyTree(), "result", tree);
+   appendTree(result, "result", tree);
 
     return result;
 }
