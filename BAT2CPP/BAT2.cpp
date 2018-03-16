@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <assert.h>
+#include <cstdint>
 #include <boost/noncopyable.hpp>
 #include "julia.h"
 
@@ -132,44 +133,46 @@ namespace BAT {
         template<int N>
         struct GCRootBase : public boost::noncopyable {
             GCRootBase() {
-                stack[0] = (void*)(2 * N + 1); // FIXME: Use actual struct instead of hacks
-                stack[1] = jl_pgcstack;
-                jl_pgcstack = (jl_gcframe_t*)stack;
+                n    = (2 * N + 1);
+                prev = jl_pgcstack;
+                jl_pgcstack = (jl_gcframe_t*)this;
             }
             ~GCRootBase() { jl_pgcstack = jl_pgcstack->prev; }
-            void* stack[N + 2];
+            intptr_t n;
+            void*    prev;
+            void*    stack[N];
         };
         
         // Copy-pasted 
         struct GCRoot1 : public GCRootBase<1> {
             GCRoot1(void* arg1) {
-                stack[2+0] = arg1;
+                stack[0] = arg1;
             }
         };
 
         struct GCRoot2 : public GCRootBase<2> {
             GCRoot2(void* arg1, void* arg2) {
-                stack[2+0] = arg1;
-                stack[2+1] = arg2;
+                stack[0] = arg1;
+                stack[1] = arg2;
             }
         };
 
         class GCRoot3 : public GCRootBase<3> {
         public:
             GCRoot3(void* arg1, void* arg2, void* arg3) {
-                stack[2+0] = arg1;
-                stack[2+1] = arg2;
-                stack[2+2] = arg3;
+                stack[0] = arg1;
+                stack[1] = arg2;
+                stack[2] = arg3;
             }
         };
 
         class GCRoot4 : public GCRootBase<4> {
         public:
             GCRoot4(void* arg1, void* arg2, void* arg3, void* arg4) {
-                stack[2+0] = arg1;
-                stack[2+1] = arg2;
-                stack[2+2] = arg3;
-                stack[2+3] = arg4;
+                stack[0] = arg1;
+                stack[1] = arg2;
+                stack[2] = arg3;
+                stack[3] = arg4;
             }
         };
     }
