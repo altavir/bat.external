@@ -85,6 +85,16 @@ function mcmc_create_chains(
 end
 
 
-
+# function mcmc_iteration_step(
+#     outputbuf :: Array{Array{Float64}},
+#     chains    :: Array{BAT.MCMCIterator},
+#     nsamples  :: Int
+#     ll::BAT.LogLevel                          = BAT.LOG_INFO,
+# )
+#     # FIXME: I need to thread exec_context around
+#     exec_context = BAT.ExecContext()
+#     #
+    
+# end
 
 end # module
