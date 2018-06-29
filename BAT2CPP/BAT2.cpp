@@ -76,21 +76,6 @@ static void finalize_julia() {
     jl_atexit_hook(0);
 }
 
-// Initialize Julia runtime and
-static void init_julia() {
-    if( !jl_is_initialized() ) {
-        // Initialize Julia and register
-        jl_init();
-        atexit(finalize_julia);
-        // Load required libraries. Note that import returns Void
-        // which is allocated statically so we don't need to track it
-        jl_eval_string("import BAT");
-        throw_on_jl_error();
-        jl_eval_string("import BATCPP");
-        throw_on_jl_error();
-    }
-}
-
 
 // ----------------------------------------------------------------
 // Internals
@@ -138,7 +123,7 @@ namespace BAT {
 BAT::JuliaValue::JuliaValue() :
     m_value( new BAT::Impl::GCBarrier() )
 {
-    init_julia();
+    Julia::initialize();
 }
 
 BAT::JuliaValue::~JuliaValue()

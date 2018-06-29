@@ -4,6 +4,8 @@
  * Utilities for making calling Julia from C++ somewhat bearable
  */
 #include <julia.h>
+#include <boost/noncopyable.hpp>
+
 
 namespace Julia {
 
@@ -58,9 +60,9 @@ namespace Julia {
         }
     };
 
-    // void initialize();
-    
-    // void finalize();
+    // Initialize Julia runtime. It's safe to call this function
+    // multiple times
+    void initialize();
     
 };
 #endif /* JULIA_CPP_HPP */

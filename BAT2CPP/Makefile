@@ -7,7 +7,7 @@ CXX      = g++
 CXXFLAGS = -Wall -g $(shell ${JL_SHARE}/julia-config.jl  --cflags)
 LDFLAGS  = $(shell ${JL_SHARE}/julia-config.jl --ldflags --ldlibs)
 
-OBJS = main.o BAT2.o
+OBJS = main.o BAT2.o julia-cpp.o
 
 all: test
 clean:
