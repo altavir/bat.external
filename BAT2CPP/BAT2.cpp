@@ -6,6 +6,8 @@
 #include "julia.h"
 
 #include "BAT2.hpp"
+#include "julia-cpp.hpp"
+
 
 // ----------------------------------------------------------------
 // function helpers
@@ -128,56 +130,9 @@ namespace BAT {
 
             jl_value_t* m_val;
         };
-
-        
-        template<int N>
-        struct GCRootBase : public boost::noncopyable {
-            GCRootBase() {
-                n    = (2 * N + 1);
-                prev = jl_pgcstack;
-                jl_pgcstack = (jl_gcframe_t*)this;
-            }
-            ~GCRootBase() { jl_pgcstack = jl_pgcstack->prev; }
-            intptr_t n;
-            void*    prev;
-            void*    stack[N];
-        };
-        
-        // Copy-pasted 
-        struct GCRoot1 : public GCRootBase<1> {
-            GCRoot1(void* arg1) {
-                stack[0] = arg1;
-            }
-        };
-
-        struct GCRoot2 : public GCRootBase<2> {
-            GCRoot2(void* arg1, void* arg2) {
-                stack[0] = arg1;
-                stack[1] = arg2;
-            }
-        };
-
-        class GCRoot3 : public GCRootBase<3> {
-        public:
-            GCRoot3(void* arg1, void* arg2, void* arg3) {
-                stack[0] = arg1;
-                stack[1] = arg2;
-                stack[2] = arg3;
-            }
-        };
-
-        class GCRoot4 : public GCRootBase<4> {
-        public:
-            GCRoot4(void* arg1, void* arg2, void* arg3, void* arg4) {
-                stack[0] = arg1;
-                stack[1] = arg2;
-                stack[2] = arg3;
-                stack[3] = arg4;
-            }
-        };
+       
     }
 }
-
 
 
 BAT::JuliaValue::JuliaValue() :
@@ -207,7 +162,7 @@ BAT::HyperRectBounds::HyperRectBounds(const std::vector<double>& low_bounds,
     jl_value_t* j_arr_low = 0;
     jl_value_t* j_arr_hi  = 0;
     jl_value_t* j_res     = 0;
-    BAT::Impl::GCRoot3 gc_root(&j_arr_low, &j_arr_hi, &j_res);
+    Julia::GCRoot3 gc_root(&j_arr_low, &j_arr_hi, &j_res);
     //
     j_arr_low = julia_array_from_vec(low_bounds);
     j_arr_hi  = julia_array_from_vec(hi_bounds);
@@ -223,7 +178,7 @@ BAT::ConstDensity::ConstDensity(const HyperRectBounds& bounds,
 {
     jl_value_t*    j_val = 0;
     jl_value_t*    j_res = 0;
-    Impl::GCRoot2 gc_root(&j_val, &j_res);
+    Julia::GCRoot2 gc_root(&j_val, &j_res);
     jl_function_t* j_con = 0;
     //
     j_val = jl_box_float64(val);
@@ -246,7 +201,7 @@ BAT::GenericDensity::GenericDensity(int nparam, double (*fun)(double*)) {
     jl_value_t* j_fun  = 0;
     jl_value_t* j_res  = 0;
     
-    Impl::GCRoot4 gc_root(&j_n, &j_fptr, &j_fun, &j_res);
+    Julia::GCRoot4 gc_root(&j_n, &j_fptr, &j_fun, &j_res);
     //
     j_n    = jl_box_int64(nparam);
     j_fptr = jl_box_voidpointer((void*)fun);
@@ -266,7 +221,7 @@ BAT::MCMCSpec::MCMCSpec(const AbstractDensity& likelihood,
     //
     jl_value_t* j_mh    = 0;
     jl_value_t* j_res   = 0;
-    BAT::Impl::GCRoot2(&j_mh, &j_res);
+    Julia::GCRoot2(&j_mh, &j_res);
     //
     j_mh  = jl_eval_string("BAT.MetropolisHastings()");
     j_res = jl_call3(j_con, j_mh,
@@ -290,7 +245,7 @@ BAT::MCMCIterator::MCMCIterator(const MCMCSpec& spec,
     //
     jl_value_t* j_n   = 0;
     jl_value_t* j_res = 0;
-    BAT::Impl::GCRoot2 gc_root(&j_n, &j_res);
+    Julia::GCRoot2 gc_root(&j_n, &j_res);
     //
     j_n = jl_box_int64(nchains);
     j_res = jl_call2(j_con, spec.julia_value(), j_n);
@@ -308,7 +263,7 @@ void BAT::MCMCIterator::generate(std::vector<std::vector<std::vector<double> > >
         jl_function_t* j_nparam = julia_get_function("BATCPP", "mcspec_nparams");
         //
         jl_value_t* j_r;
-        BAT::Impl::GCRoot1 gc_root(&j_r);
+        Julia::GCRoot1 gc_root(&j_r);
         //
         j_r = jl_call1(j_nparam, m_value->m_val);
         if( jl_is_int32(j_r) ) {
