@@ -10,13 +10,6 @@ namespace BAT {
         class GCBarrier;
     };
 
-    // Convert Julia error into exception
-    class JuliaException : public std::runtime_error {
-    public:
-        JuliaException(const char* msg);
-        JuliaException(const std::string& msg);
-    };
-
     // Exception in the BAT wrapper
     class BATException : public std::runtime_error {
     public:

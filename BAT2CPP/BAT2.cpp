@@ -18,62 +18,37 @@ static jl_function_t* julia_get_function(const char* module, const char* fun) {
     // Module lookup
     jl_value_t* j_modval = jl_get_global(jl_main_module, jl_symbol(module));
     if( !j_modval ) {
-        throw BAT::JuliaException("No module returned");
+        throw Julia::Exception("No module returned");
     }
     if( !jl_is_module(j_modval) ) {
-        throw BAT::JuliaException("Not a module");
+        throw Julia::Exception("Not a module");
     }
     jl_module_t* j_mod = reinterpret_cast<jl_module_t*>(j_modval);
     // Function lookup
     jl_value_t* j_funval = jl_get_global(j_mod, jl_symbol(fun));
     if( !j_funval ) {
-        throw BAT::JuliaException("No function found");
+        throw Julia::Exception("No function found");
     }
     // FIXME: find out typeof!
     // if( !jl_is_method_instance(j_funval) ) {
-    //     throw BAT::JuliaException("Not a method");
+    //     throw Julia::Exception("Not a method");
     // }
     return reinterpret_cast<jl_function_t*>(j_funval);
-}
-
-// Throw exception on Julia error
-static void throw_on_jl_error(const char* errmsg = 0) {
-    jl_value_t* val = jl_exception_occurred();
-    if( val ) {
-        jl_function_t* f = jl_get_function(jl_base_module, "showerror");
-        jl_call2(jl_get_function(jl_base_module, "showerror"),
-                 jl_stderr_obj(),
-                 jl_exception_occurred());
-        jl_printf(jl_stderr_stream(), "\n");
-        //
-        std::string msg = std::string("Julia error: ") + jl_typeof_str(val);
-        if( errmsg ) {
-            msg += " [";
-            msg += errmsg;
-            msg += "]";
-        }
-        throw BAT::JuliaException(msg);
-    }
 }
 
 // Create Julia array from C++ vector. Returned value is not rooted
 static jl_value_t* julia_array_from_vec(const std::vector<double>& vec) {
     // Allocate array
     jl_value_t* ty  = jl_apply_array_type((jl_value_t*)jl_float64_type, 1);
-    throw_on_jl_error("Type generation");
+    Julia::rethrow("Type generation");
     jl_array_t* arr = jl_alloc_array_1d(ty, vec.size());
-    throw_on_jl_error("Array allocation");
+    Julia::rethrow("Array allocation");
     // Fill allocated array with data
     double *data = (double*)jl_array_data(arr);
     for(int i = 0; i < vec.size(); i++) {
         data[i] = vec[i];
     }
     return (jl_value_t*)arr;
-}
-
-// Call exit hook
-static void finalize_julia() {
-    jl_atexit_hook(0);
 }
 
 
@@ -97,7 +72,7 @@ namespace BAT {
                 //
                 jl_function_t* j_fun = julia_get_function("BATCPP", "gc_ref");
                 jl_call1(j_fun, m_val);
-                throw_on_jl_error();
+                Julia::rethrow();
                 return 0;
             }
 
@@ -279,14 +254,6 @@ void BAT::MCMCIterator::generate(std::vector<std::vector<std::vector<double> > >
 // ----------------------------------------------------------------
 // Exception & Co
 // ----------------------------------------------------------------
-
-BAT::JuliaException::JuliaException(const char* msg) :
-    std::runtime_error(msg)
-{}
-
-BAT::JuliaException::JuliaException(const std::string& msg) :
-    std::runtime_error(msg)
-{}
 
 BAT::BATException::BATException(const char* msg) :
     std::runtime_error(msg)

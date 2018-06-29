@@ -3,11 +3,19 @@
 /*
  * Utilities for making calling Julia from C++ somewhat bearable
  */
-#include <julia.h>
+#include <stdexcept>
 #include <boost/noncopyable.hpp>
+#include <julia.h>
 
 
 namespace Julia {
+
+    // Convert Julia error into exception
+    class Exception : public std::runtime_error {
+    public:
+        Exception(const char* msg);
+        Exception(const std::string& msg);
+    };
 
     // Base class for keeping Julia values alive. Note that unlike
     // Julia C macros several such value could be in same scope.
@@ -23,7 +31,7 @@ namespace Julia {
         void*        prev;          // Previous block
         jl_value_t** stack[N];      // Values to preserve
     };
-    
+
     // Prevent 1 value for being GC collected
     struct GCRoot1 : public GCRootBase<1> {
         GCRoot1(jl_value_t** arg1) {
@@ -31,14 +39,14 @@ namespace Julia {
         }
     };
 
-    // Prevent 2 value for being GC collected    
+    // Prevent 2 value for being GC collected
     struct GCRoot2 : public GCRootBase<2> {
         GCRoot2(jl_value_t** arg1, jl_value_t** arg2) {
             stack[0] = arg1;
             stack[1] = arg2;
         }
     };
-    
+
     // Prevent 3 value for being GC collected
     class GCRoot3 : public GCRootBase<3> {
     public:
@@ -48,7 +56,7 @@ namespace Julia {
             stack[2] = arg3;
         }
     };
-    
+
     // Prevent 2 value for being GC collected
     class GCRoot4 : public GCRootBase<4> {
     public:
@@ -63,6 +71,10 @@ namespace Julia {
     // Initialize Julia runtime. It's safe to call this function
     // multiple times
     void initialize();
-    
+
+    // Check if operation raised Julia exception and convert it into
+    // C++ exception of type JuliaException.
+    void rethrow(const char* errmsg = 0);
+
 };
 #endif /* JULIA_CPP_HPP */
