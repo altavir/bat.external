@@ -1,11 +1,15 @@
 .PHONY: all clean
-JL_SHARE =/home/alexey/opt/share/julia
-
+# Julia-related flags
+JL_CFG      = $(shell dirname $$(which julia))/../share/julia/julia-config.jl
+JL_CFLAGS   = $(shell ${JL_CFG} --cflags)
+JL_CXXFLAGS = $(shell ${JL_CFG} --cflags | sed s/-std=gnu99//)
+JL_LDFLAGS  = $(shell ${JL_CFG} --ldflags --ldlibs)
+# Compiler flags
 CC       = gcc
-CFLAGS   = -Wall -g $(shell ${JL_SHARE}/julia-config.jl  --cflags)
+CFLAGS   = -Wall -g ${JL_CFLAGS}
 CXX      = g++
-CXXFLAGS = -Wall -g $(shell ${JL_SHARE}/julia-config.jl  --cflags)
-LDFLAGS  = $(shell ${JL_SHARE}/julia-config.jl --ldflags --ldlibs)
+CXXFLAGS = -Wall -g ${JL_CXXFLAGS}
+LDFLAGS  = ${JL_LDFLAGS}
 
 OBJS = main.o BAT2.o julia-cpp.o
 
