@@ -4,9 +4,8 @@
  * Utilities for making calling Julia from C++ somewhat bearable
  */
 #include <stdexcept>
-#include <boost/noncopyable.hpp>
+#include <memory>
 #include <julia.h>
-
 
 namespace Julia {
 
@@ -17,10 +16,25 @@ namespace Julia {
         Exception(const std::string& msg);
     };
 
+
+    class GCBarrier;
+
+    // Represents pointer to value in Julia heap. It won't be garbage
+    // collected as long as object is alive.
+    class Value {
+    public:
+        // Create value from value in Julia heap.
+        explicit Value(jl_value_t*);
+        // Get pointer to Julia value. Use with care!
+        jl_value_t* juliaValue() const;
+    private:
+        std::shared_ptr<GCBarrier> m_value;
+    };
+
     // Base class for keeping Julia values alive. Note that unlike
     // Julia C macros several such value could be in same scope.
     template<int N>
-    struct GCRootBase : public boost::noncopyable {
+    struct GCRootBase {
         GCRootBase() {
             n    = (2 * N + 1);
             prev = jl_pgcstack;
@@ -30,6 +44,9 @@ namespace Julia {
         intptr_t     n;             // Number of values in array (fudged)
         void*        prev;          // Previous block
         jl_value_t** stack[N];      // Values to preserve
+
+        GCRootBase(const GCRootBase&)             = delete;
+        GCRootBase& operator= (const GCRootBase&) = delete;
     };
 
     // Prevent 1 value for being GC collected
