@@ -5,6 +5,7 @@
  */
 #include <stdexcept>
 #include <memory>
+#include <vector>
 #include <julia.h>
 
 namespace Julia {
@@ -74,7 +75,7 @@ namespace Julia {
         }
     };
 
-    // Prevent 2 value for being GC collected
+    // Prevent 4 value for being GC collected
     class GCRoot4 : public GCRootBase<4> {
     public:
         GCRoot4(jl_value_t** arg1, jl_value_t** arg2, jl_value_t** arg3, jl_value_t** arg4) {
@@ -93,5 +94,15 @@ namespace Julia {
     // C++ exception of type JuliaException.
     void rethrow(const char* errmsg = 0);
 
+    // Convert C++ array into Julia array. Content of array is copied
+    // and return value should be rooted to prevent GC.
+    jl_value_t* array_from_vec(const std::vector<double>& vec);
+
+    // Get function from module with given name
+    jl_function_t* get_function(const char* module, const char* fun);
+
+    // Print Julia value (primarily useful for debugging)
+    void println(jl_value_t* val);
+    void println(const Value& val);
 };
 #endif /* JULIA_CPP_HPP */

@@ -120,6 +120,52 @@ namespace Julia {
         }
     }
 
+    jl_value_t* array_from_vec(const std::vector<double>& vec) {
+        jl_value_t* ty  = 0;
+        jl_array_t* arr = 0;
+        GCRoot2 gc(&ty, (jl_value_t**)&arr);
+        // Allocate array.
+        ty  = jl_apply_array_type((jl_value_t*)jl_float64_type, 1);
+        Julia::rethrow("Julia::array_from_vec: Type generation");
+        arr = jl_alloc_array_1d(ty, vec.size());
+        Julia::rethrow("Julia::array_from_vec: Array allocation");
+        // Fill allocated array with data
+        double *data = (double*)jl_array_data(arr);
+        for(size_t i = 0; i < vec.size(); i++) {
+            data[i] = vec[i];
+        }
+        return (jl_value_t*)arr;
+    }
+
+    jl_function_t* get_function(const char* module, const char* fun) {
+        // Module lookup
+        jl_value_t* j_modval = jl_get_global(jl_main_module, jl_symbol(module));
+        if( !j_modval ) {
+            throw Julia::Exception("No module returned");
+        }
+        if( !jl_is_module(j_modval) ) {
+            throw Julia::Exception("Not a module");
+        }
+        jl_module_t* j_mod = reinterpret_cast<jl_module_t*>(j_modval);
+        // Function lookup
+        jl_value_t* j_funval = jl_get_global(j_mod, jl_symbol(fun));
+        if( !j_funval ) {
+            throw Julia::Exception("No function found");
+        }
+        // FIXME: find out typeof!
+        // if( !jl_is_method_instance(j_funval) ) {
+        //     throw Julia::Exception("Not a method");
+        // }
+        return reinterpret_cast<jl_function_t*>(j_funval);
+    }
+
+    void println(jl_value_t* val) {
+        jl_call1(fun_print, val);
+    }
+
+    void println(const Value& val) {
+        jl_call1(fun_print, val.juliaValue());
+    }
 }
 
 
