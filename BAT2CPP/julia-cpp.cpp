@@ -2,16 +2,31 @@
 
 #include <iostream>
 
+
 // Set of Julia values which should be prevented from GC
 static jl_value_t*     g_barrier = 0;
 // GC root for value above. Here it's allocated on heap
-static Julia::GCRoot1* gc_root   = 0;
+static Julia::GCRoot2* gc_root   = 0;
 // Julia globals. They're set during initialization
 static jl_value_t* fun_get      = 0;
 static jl_value_t* fun_setindex = 0;
 static jl_value_t* fun_detete   = 0;
 static jl_value_t* fun_plus     = 0;
 static jl_value_t* fun_print    = 0;
+
+// Functions for creating callbacks into C++
+static jl_function_t* callback_c_raw;
+const char* prog_callback_c_raw =
+    "function (n :: Int, f :: Ptr{Void})\n"
+    "  function fun(xs :: Array{Float64})\n"
+    "    if( n != length(xs))\n"
+    "      error(\"Sizes do not match\")\n"
+    "    end\n"
+    "    ccall(f, Float64, (Ref{Float64},), xs)\n"
+    "  end\n"
+    "  fun\n"
+    "end";
+
 
 // Call exit hook
 static void finalize_julia() {
@@ -89,7 +104,8 @@ namespace Julia {
 
         // Initialize Julia and register finalization code
         jl_init();
-        gc_root = new GCRoot1(&g_barrier);
+        gc_root = new GCRoot2(&g_barrier,
+                              (jl_value_t**)&callback_c_raw);
         atexit(finalize_julia);
         // Get addresses of global functions
         fun_get      = jl_get_global(jl_main_module, jl_symbol("get"));
@@ -99,6 +115,9 @@ namespace Julia {
         fun_print    = jl_get_global(jl_main_module, jl_symbol("println"));
         // Create GC barrier
         g_barrier = jl_eval_string("ObjectIdDict()");
+        // Set up callbacks
+        callback_c_raw = jl_eval_string(prog_callback_c_raw);
+        rethrow();
     }
 
 
@@ -157,6 +176,19 @@ namespace Julia {
         //     throw Julia::Exception("Not a method");
         // }
         return reinterpret_cast<jl_function_t*>(j_funval);
+    }
+
+    jl_function_t* make_callback(int nparam, double (*fun)(double*)) {
+        jl_function_t* j_fun  = 0;
+        jl_value_t*    j_npar = 0;
+        jl_value_t*    j_fptr = 0;
+        GCRoot3 gc((jl_value_t**)(&j_fun), &j_npar, &j_fptr);
+        //
+        j_npar = jl_box_int64(nparam);
+        j_fptr = jl_box_voidpointer((void*)fun);
+        j_fun  = jl_call2(callback_c_raw, j_npar, j_fptr);
+        rethrow();
+        return j_fun;
     }
 
     void println(jl_value_t* val) {

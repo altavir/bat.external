@@ -101,6 +101,9 @@ namespace Julia {
     // Get function from module with given name
     jl_function_t* get_function(const char* module, const char* fun);
 
+    // Create Julia function from C functions
+    jl_function_t* make_callback(int nparam, double (*fun)(double*));
+
     // Print Julia value (primarily useful for debugging)
     void println(jl_value_t* val);
     void println(const Value& val);
