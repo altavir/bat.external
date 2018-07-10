@@ -198,6 +198,38 @@ namespace Julia {
     void println(const Value& val) {
         jl_call1(fun_print, val.juliaValue());
     }
+
+    jl_value_t* call1(jl_function_t* fun, jl_value_t* a) {
+        jl_value_t* r = 0;
+        GCRoot1 gc(&r);
+        r = jl_call1(fun, a);
+        rethrow();
+        return r;
+    }
+
+    jl_value_t* call2(jl_function_t* fun, jl_value_t* a, jl_value_t* b) {
+        jl_value_t* r = 0;
+        GCRoot1 gc(&r);
+        r = jl_call2(fun, a, b);
+        rethrow();
+        return r;
+    }
+
+    jl_value_t* call3(jl_function_t* fun, jl_value_t* a, jl_value_t* b, jl_value_t* c) {
+        jl_value_t* r = 0;
+        GCRoot1 gc(&r);
+        r = jl_call3(fun, a, b, c);
+        rethrow();
+        return r;
+    }
+
+    jl_value_t* eval_string(const char* str) {
+        jl_value_t* r = 0;
+        GCRoot1 gc(&r);
+        r = jl_eval_string(str);
+        rethrow();
+        return r;
+    }
 }
 
 

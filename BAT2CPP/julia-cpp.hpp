@@ -104,6 +104,27 @@ namespace Julia {
     // Create Julia function from C functions
     jl_function_t* make_callback(int nparam, double (*fun)(double*));
 
+    // Call function with 1 parameter and throw exception if something
+    // goes wrong
+    jl_value_t* call1(jl_function_t* fun,
+                      jl_value_t* a);
+
+    // Call function with 1 parameter and throw exception if something
+    // goes wrong
+    jl_value_t* call2(jl_function_t* fun,
+                      jl_value_t* a,
+                      jl_value_t* b);
+
+    // Call function with 1 parameter and throw exception if something
+    // goes wrong
+    jl_value_t* call3(jl_function_t* fun,
+                      jl_value_t* a,
+                      jl_value_t* b,
+                      jl_value_t* c);
+
+    // Evaluate strings
+    jl_value_t* eval_string(const char* str);
+
     // Print Julia value (primarily useful for debugging)
     void println(jl_value_t* val);
     void println(const Value& val);
