@@ -3,7 +3,7 @@ let
   config = {
     packageOverrides = pkgs: rec {
       buildJuliaPackage =
-        jlBuilder {stdenv = pkgs.stdenv; fetchgit = pkgs.fetchgit;};
+        jlBuilder {stdenv = pkgs.stdenv; fetchgit = pkgs.fetchgit; juliaPackages = pkgs.juliaPackages;};
       juliaPackages = {
         # Private ones
         BAT                 = pkgs.callPackage ./nix/julia-packages/BAT {};
@@ -21,7 +21,16 @@ let
         PDMats           = pkgs.callPackage ./nix/julia-packages/PDMats {};
         RandomNumbers    = pkgs.callPackage ./nix/julia-packages/RandomNumbers {};
         RecipesBase      = pkgs.callPackage ./nix/julia-packages/RecipesBase {};
-        StatsBase        = pkgs.callPackage ./nix/julia-packages/StatsBase {};
+#        StatsBase        = pkgs.callPackage ./nix/julia-packages/StatsBase {};
+        StatsFuns        = pkgs.callPackage ./nix/julia-packages/StatsFuns {};
+        Rmath        = pkgs.callPackage ./nix/julia-packages/Rmath {};
+        BinaryProvider        = pkgs.callPackage ./nix/julia-packages/BinaryProvider {};
+        BinDeps        = pkgs.callPackage ./nix/julia-packages/BinDeps {};
+        SHA        = pkgs.callPackage ./nix/julia-packages/SHA {};
+        URIParser        = pkgs.callPackage ./nix/julia-packages/SHA {};
+        SpecialFunctions        = pkgs.callPackage ./nix/julia-packages/SpecialFunctions {};
+
+
         };
       };
     };
@@ -32,21 +41,21 @@ in
     buildInputs = [ pkgs.stdenv
                     pkgs.julia
                     #
-                    pkgs.juliaPackages.BAT
-                    pkgs.juliaPackages.MultiThreadingTools
+#                    pkgs.juliaPackages.BAT
+#                    pkgs.juliaPackages.MultiThreadingTools
                     # Julia packages
-                    pkgs.juliaPackages.Clustering
-                    pkgs.juliaPackages.Colors
-                    pkgs.juliaPackages.Compat
-                    pkgs.juliaPackages.Distributions
-                    pkgs.juliaPackages.DoubleDouble
-                    pkgs.juliaPackages.ElasticArrays
-                    pkgs.juliaPackages.FunctionWrappers
-                    pkgs.juliaPackages.IntervalSets
-                    pkgs.juliaPackages.Parameters
-                    pkgs.juliaPackages.PDMats
-                    pkgs.juliaPackages.RandomNumbers
-                    pkgs.juliaPackages.RecipesBase
-                    pkgs.juliaPackages.StatsBase
+                    #pkgs.juliaPackages.Clustering
+                    #pkgs.juliaPackages.Colors
+                    #pkgs.juliaPackages.Compat
+#                    pkgs.juliaPackages.Distributions
+                    #pkgs.juliaPackages.DoubleDouble
+                    # pkgs.juliaPackages.ElasticArrays
+                    # pkgs.juliaPackages.FunctionWrappers
+                    # pkgs.juliaPackages.IntervalSets
+                    # pkgs.juliaPackages.Parameters
+                    # pkgs.juliaPackages.PDMats
+                    # pkgs.juliaPackages.RandomNumbers
+                    # pkgs.juliaPackages.RecipesBase
+                    # pkgs.juliaPackages.StatsBase
                   ];
   }
