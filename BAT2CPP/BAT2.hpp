@@ -19,56 +19,65 @@ namespace BAT {
     // Any value which uses code from BAT. It ensures that BAT is
     // actually loaded in the constructor
     class Value : public Julia::Value {
+    public:
         explicit Value(jl_value_t* val);
     };
    
     
     
-    // //
-    // class AbstractParamBounds : public Julia::Value {
-    // };
+    //
+    class AbstractParamBounds : public BAT::Value {
+    protected:
+        explicit AbstractParamBounds(jl_value_t* val):
+            Value(val)
+        {}
+    };
 
-    // //
-    // class ParamVolumeBounds : public AbstractParamBounds {
-    // };
+    //
+    class ParamVolumeBounds : public AbstractParamBounds {
+    protected:
+        explicit ParamVolumeBounds(jl_value_t* val):
+            AbstractParamBounds(val)
+        {}
+    };
 
-    // //
-    // class HyperRectBounds : public ParamVolumeBounds {
-    // public:
-    //     HyperRectBounds(const std::vector<double>& low_bounds,
-    //                     const std::vector<double>& hi_bounds);
-    // };
+    //
+    class HyperRectBounds : public ParamVolumeBounds {
+    public:
+        HyperRectBounds(const std::vector<double>& low_bounds,
+                        const std::vector<double>& hi_bounds);
+    };
 
     
-    // /// Abstract base class corresponding to prior in MCMCSpec
-    // class AbstractDensity : public Julia::Value {
-    // };
+    /// Abstract base class corresponding to prior in MCMCSpec
+    class AbstractDensity : public BAT::Value {
+    protected:
+        AbstractDensity(jl_value_t* val) :
+            Value(val)
+        {}
+    };
 
-    // // Corresponds to constant density prior
-    // class ConstDensity : public AbstractDensity {
-    // public:
-    //     ConstDensity(const HyperRectBounds& bounds,
-    //                  double val = 0);
-    //     virtual ~ConstDensity();
-    // private:
-    //     HyperRectBounds m_bounds;
-    // };
+    // Corresponds to constant density prior
+    class ConstDensity : public AbstractDensity {
+    public:
+        ConstDensity(const HyperRectBounds& bounds,
+                     double val = 0);
+        virtual ~ConstDensity();
+    private:
+        HyperRectBounds m_bounds;
+    };
 
-    // // 
-    // class GenericDensity : public AbstractDensity {
-    // public:
-    //     GenericDensity(int nparam, double (*fun)(double*));
-    //     virtual ~GenericDensity();
-    // };
+    // 
+    class GenericDensity : public AbstractDensity {
+    public:
+        GenericDensity(int nparam, double (*fun)(double*));
+    };
 
-    // class MCMCSpec : public JuliaValue {
-    // public:
-    //     MCMCSpec(const AbstractDensity& likelihood,
-    //              const AbstractDensity& prior);
-    //     virtual ~MCMCSpec();
-    // private:
-    //     boost::shared_ptr<Impl::GCBarrier> m_likelihood;
-    // };
+    class MCMCSpec : public BAT::Value {
+    public:
+        MCMCSpec(const AbstractDensity& likelihood,
+                 const AbstractDensity& prior);
+    };
     
     // /// Thin wrapper class for accessing Julia implementation of BAT2
     // class MCMCIterator : public JuliaValue {
