@@ -9,6 +9,11 @@
 #include <julia.h>
 
 namespace Julia {
+    class GCBarrier;
+
+    // ================================================================
+    // High level API
+    // ================================================================
 
     // Convert Julia error into exception
     class Exception : public std::runtime_error {
@@ -16,9 +21,6 @@ namespace Julia {
         Exception(const char* msg);
         Exception(const std::string& msg);
     };
-
-
-    class GCBarrier;
 
     // Represents pointer to value in Julia heap. It won't be garbage
     // collected as long as object is alive.
@@ -31,6 +33,21 @@ namespace Julia {
     private:
         std::shared_ptr<GCBarrier> m_value;
     };
+
+
+    // Initialize Julia runtime. It's safe to call this function
+    // multiple times
+    void initialize();
+
+    // Check if operation raised Julia exception and convert it into
+    // C++ exception of type JuliaException.
+    void rethrow(const char* errmsg = 0);
+
+
+    
+    // ================================================================
+    // Low level API
+    // ================================================================
 
     // Base class for keeping Julia values alive. Note that unlike
     // Julia C macros several such value could be in same scope.
@@ -85,14 +102,6 @@ namespace Julia {
             stack[3] = arg4;
         }
     };
-
-    // Initialize Julia runtime. It's safe to call this function
-    // multiple times
-    void initialize();
-
-    // Check if operation raised Julia exception and convert it into
-    // C++ exception of type JuliaException.
-    void rethrow(const char* errmsg = 0);
 
     // Convert C++ array into Julia array. Content of array is copied
     // and return value should be rooted to prevent GC.
