@@ -34,12 +34,12 @@ let
         };
       };
     };
-  pkgs = import <nixpkgs> { config = config;};
+  pkgs = import <nixpkgs> {};
 in
   pkgs.stdenv.mkDerivation {
     name = "bat2-shell";
     buildInputs = [ pkgs.stdenv
-                    pkgs.julia
+                    pkgs.julia_10
                     #
 #                    pkgs.juliaPackages.BAT
 #                    pkgs.juliaPackages.MultiThreadingTools
