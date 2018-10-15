@@ -2,11 +2,10 @@
 
 #include <iostream>
 
-
 // Set of Julia values which should be prevented from GC
 static jl_value_t*     g_barrier = 0;
 // GC root for value above. Here it's allocated on heap
-static Julia::GCRoot2* gc_root   = 0;
+static Julia::Impl::GCRoot2* gc_root   = 0;
 // Julia globals. They're set during initialization
 static jl_value_t* fun_get      = 0;
 static jl_value_t* fun_setindex = 0;
@@ -27,7 +26,6 @@ const char* prog_callback_c_raw =
     "  fun\n"
     "end";
 
-
 // Call exit hook
 static void finalize_julia() {
     jl_atexit_hook(0);
@@ -35,8 +33,21 @@ static void finalize_julia() {
     //        of GC roots
 }
 
-namespace Julia {
+// ================================================================
+// Implementation details
+// ================================================================
+namespace Julia::Impl {
+    
+};
 
+
+namespace Julia {
+    using Impl::GCRoot1;
+    using Impl::GCRoot2;
+    using Impl::GCRoot3;
+    using Impl::GCRoot4;;
+
+    
     // Internal class which puts Julia value into ObjectIdDict to
     // prevent their garbage collection.
     class GCBarrier {
@@ -139,6 +150,10 @@ namespace Julia {
         }
     }
 
+
+
+    // ----------------------------------------------------------------
+    
     jl_value_t* array_from_vec(const std::vector<double>& vec) {
         jl_value_t* ty  = 0;
         jl_array_t* arr = 0;

@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     jl_function_t* j_wrapped = 0;
     jl_value_t* arr   = 0;
     jl_value_t* res   = 0;
-    Julia::GCRoot3 gc3((jl_value_t**)&j_wrapped, &arr, &res);
+    Julia::Impl::GCRoot3 gc3((jl_value_t**)&j_wrapped, &arr, &res);
 
     arr = Julia::array_from_vec(hi);
     Julia::rethrow();

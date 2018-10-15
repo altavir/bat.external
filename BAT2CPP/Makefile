@@ -11,7 +11,7 @@ CXX      = g++
 CXXFLAGS = -Wall -g ${JL_CXXFLAGS}
 LDFLAGS  = ${JL_LDFLAGS}
 
-OBJS = main.o BAT2.o julia-cpp.o
+OBJS = main.o julia-cpp.o
 
 all: test
 clean:
@@ -25,4 +25,4 @@ test: ${OBJS}
 %.o : %.cpp
 	${CXX} -c -o $@ ${CXXFLAGS} $<
 
-${OBJS} : BAT2.hpp julia-cpp.hpp
+${OBJS} : BAT2.hpp julia-cpp.hpp julia-cpp-impl.hpp
