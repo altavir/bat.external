@@ -17,12 +17,6 @@ namespace Julia {
     // High level API
     // ================================================================
 
-    // Convert Julia error into exception
-    class Exception : public std::runtime_error {
-    public:
-        Exception(const char* msg);
-        Exception(const std::string& msg);
-    };
 
     // Represents pointer to value in Julia heap. It won't be garbage
     // collected as long as object is alive.
@@ -37,6 +31,8 @@ namespace Julia {
     };
 
 
+    
+
     // Initialize Julia runtime. It's safe to call this function
     // multiple times
     void initialize();
@@ -46,6 +42,10 @@ namespace Julia {
     void rethrow(const char* errmsg = 0);
 
 
+    // template<typename R>
+    // jl_value_t* wrap_c_function_1(R (*fun)()) {
+    // }
+    
     
     // ================================================================
     // Low level API
