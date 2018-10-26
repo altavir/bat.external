@@ -18,9 +18,6 @@ static jl_value_t* fun_tuple    = 0;
 static jl_value_t* ty_Float64   = 0;
 
 
-// Functions for creating callbacks into C++
-static jl_function_t* callback_simple_1 = 0;
-static jl_function_t* callback_simple_2 = 0;
 // const char* prog_callback_c_raw =
 //     "function (n :: Int, f :: Ptr{Void})\n"
 //     "  function fun(xs :: Array{Float64})\n"
@@ -39,7 +36,7 @@ static void finalize_julia() {
     //        of GC roots
 }
 
-void stash_value(jl_value_t* val) {
+static void stash_value(jl_value_t* val) {
     // Just in case we put parameter into GC root to prevent its
     // accidental collection
     jl_value_t* zero = 0;
@@ -55,14 +52,6 @@ void stash_value(jl_value_t* val) {
     jl_call3(fun_setindex, g_barrier, n, val);   Julia::rethrow();
 }
 
-static jl_value_t* eval_and_stash(const char* str) {
-    jl_value_t* val = 0;
-    Julia::Impl::GCRoot1 root(&val);
-    val = jl_eval_string(str);
-    Julia::rethrow();
-    stash_value(val);
-    return val;
-}
 
 // ================================================================
 // Implementation details
@@ -353,30 +342,6 @@ namespace Julia {
 
     void println(const Value& val) {
         jl_call1(fun_print, val.juliaValue());
-    }
-
-    jl_value_t* call1(jl_function_t* fun, jl_value_t* a) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_call1(fun, a);
-        rethrow();
-        return r;
-    }
-
-    jl_value_t* call2(jl_function_t* fun, jl_value_t* a, jl_value_t* b) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_call2(fun, a, b);
-        rethrow();
-        return r;
-    }
-
-    jl_value_t* call3(jl_function_t* fun, jl_value_t* a, jl_value_t* b, jl_value_t* c) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_call3(fun, a, b, c);
-        rethrow();
-        return r;
     }
 
     jl_value_t* eval_string(const char* str) {
