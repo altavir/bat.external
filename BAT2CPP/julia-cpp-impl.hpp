@@ -124,6 +124,20 @@ namespace Julia::Impl {
         const std::string& paramB
         );
 
+    template<typename R>
+    jl_value_t* wrap_c_function_0(R (*fun)()) {
+        // Types
+        const std::string& tyR = Convert<R>::juliaTypeName();
+        //
+        jl_value_t* r      = 0;
+        jl_value_t* funptr = 0;
+        Impl::GCRoot2(&r, &funptr);
+        //
+        funptr = jl_box_voidpointer((void*)fun);
+        r      = wrap_c_function_0_worker(funptr, tyR);
+        return r;
+    }
+
     template<typename R, typename A>
     jl_value_t* wrap_c_function_1(R (*fun)(A)) {
         // Types
