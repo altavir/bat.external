@@ -30,37 +30,20 @@ int main(int argc, char *argv[])
         jl_value_t* b = 0;
         jl_value_t* f = 0;
         jl_value_t* r = 0;
-        Julia::Impl::GCRoot4 root(&a, &b, &f, &r);
-        
+        Julia::LL::GCRoot4 root(&a, &b, &f, &r);
+
         a = jl_box_float64(12);
         b = jl_box_float64(100000);
-        f = Julia::Impl::wrap_c_function_2( &test_add );
+        f = Julia::LL::wrapFunction( &test_add );
 
+        Julia::println(a);
+        Julia::println(b);
         Julia::println(f);
-
-        // std::cout << "--------------\n";
-        // b = jl_get_global(jl_main_module, jl_symbol("typeof"));
-        // r = jl_call1((jl_function_t*)b, a);
-        // Julia::println(r);
-        // r = jl_call1((jl_function_t*)b, b);
-        // Julia::println(r);
-        // r = jl_call1((jl_function_t*)b, f);
-        // Julia::println(r);
-        // std::cout << "--------------\n";
-        // {
-        //     jl_value_t* p;
-        //     p = Julia::Impl::get_fun_ccall();
-        //     std::cout << jl_is_method(p) << '\n';
-        //     std::cout << jl_is_method_instance(p) << '\n';
-        // }
-        // std::cout << "--------------\n";
-
-        // // Julia::println(f);
-        r = Julia::Impl::call( (jl_function_t*)f, a, b);
+        r = jl_call2((jl_function_t*)f, a, b);
         Julia::println(r);
-        
+
     }
-    
+
     // jl_function_t* j_fun = 0;
     // jl_value_t* two = 0;
     // jl_value_t* f   = 0;
@@ -79,7 +62,7 @@ int main(int argc, char *argv[])
     //                "end");
     // Julia::rethrow();
 
-    
+
     // jl_function_t* j_wrapped = 0;
     // jl_value_t* arr   = 0;
     // jl_value_t* res   = 0;
@@ -87,17 +70,17 @@ int main(int argc, char *argv[])
 
     // arr = Julia::array_from_vec(hi);
     // Julia::rethrow();
-    
+
     // j_wrapped = Julia::make_callback(2, testfun);
     // res = jl_call1(j_wrapped, arr);
     // Julia::rethrow();
     // Julia::println(res);
-        
 
 
-    
+
+
     // BAT::Value( jl_box_int64(101) );
-    
+
     // std::cout << ((void*)jl_pgcstack) << std::endl;
     // {
     //     // jl_value_t* n = 0;
@@ -107,15 +90,15 @@ int main(int argc, char *argv[])
 
     //     Julia::Value val2( jl_box_int64(102) );
     //     std::cout << (void*)val2.juliaValue() << std::endl;
-        
-    //     Julia::Value val3( jl_box_float64(1.222) );        
+
+    //     Julia::Value val3( jl_box_float64(1.222) );
     //     std::cout << (void*)val3.juliaValue() << std::endl;
     //     Julia::Value val4( val3.juliaValue() );
     //     std::cout << (void*)val3.juliaValue() << std::endl;
 
     // }
     // {
-    //     Julia::Value val3( jl_box_float64(1.222) );        
+    //     Julia::Value val3( jl_box_float64(1.222) );
     //     std::cout << (void*)val3.juliaValue() << std::endl;
     // }
     // BAT::HyperRectBounds bounds(lo,hi);
@@ -125,4 +108,4 @@ int main(int argc, char *argv[])
     //----
     // BAT::MCMCIterator mit(spec, 2);
     return 0;
-}    
+}

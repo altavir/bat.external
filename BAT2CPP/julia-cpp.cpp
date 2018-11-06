@@ -5,7 +5,7 @@
 // Set of Julia values which should be prevented from GC
 static jl_value_t*     g_barrier = 0;
 // GC root for value above. Here it's allocated on heap
-static Julia::Impl::GCRoot1* gc_root   = 0;
+static Julia::LL::GCRoot1* gc_root   = 0;
 // Julia globals. They're set during initialization
 static jl_value_t* fun_get      = 0;
 static jl_value_t* fun_setindex = 0;
@@ -13,21 +13,8 @@ static jl_value_t* fun_detete   = 0;
 static jl_value_t* fun_plus     = 0;
 static jl_value_t* fun_print    = 0;
 static jl_value_t* fun_typeof   = 0;
-static jl_value_t* fun_tuple    = 0;
 //
-static jl_value_t* ty_Float64   = 0;
-
-
-// const char* prog_callback_c_raw =
-//     "function (n :: Int, f :: Ptr{Void})\n"
-//     "  function fun(xs :: Array{Float64})\n"
-//     "    if( n != length(xs))\n"
-//     "      error(\"Sizes do not match\")\n"
-//     "    end\n"
-//     "    ccall(f, Float64, (Ref{Float64},), xs)\n"
-//     "  end\n"
-//     "  fun\n"
-//     "end";
+static jl_value_t* fun_callback2 = 0;
 
 // Call exit hook
 static void finalize_julia() {
@@ -36,13 +23,12 @@ static void finalize_julia() {
     //        of GC roots
 }
 
+// Put value to global map of IDs
 static void stash_value(jl_value_t* val) {
-    // Just in case we put parameter into GC root to prevent its
-    // accidental collection
     jl_value_t* zero = 0;
     jl_value_t* one  = 0;
     jl_value_t* n    = 0;
-    Julia::Impl::GCRoot4 gc(&zero, &one, &n, &val);
+    Julia::LL::GCRoot4 gc(&zero, &one, &n, &val);
     // Constants;
     zero = jl_box_int64(0);
     one  = jl_box_int64(1);
@@ -52,115 +38,43 @@ static void stash_value(jl_value_t* val) {
     jl_call3(fun_setindex, g_barrier, n, val);   Julia::rethrow();
 }
 
+// Decrease refcount to Julia value to prevent its garbage collection
+static void throw_away(jl_value_t* val) {
+    jl_value_t* zero = 0;
+    jl_value_t* one  = 0;
+    jl_value_t* n    = 0;
+    Julia::LL::GCRoot3 gc(&zero, &one, &n);
+    // Constants;
+    zero = jl_box_int64(0);
+    one  = jl_box_int64(-1);
+    // Decrease counter and remove value from map
+    //
+    // NOTE: We must not throw exceptions from destructor.
+    //       Throwing in the destructor is absolutely
+    //       haram!
+    n = jl_call3(fun_get, g_barrier, val, zero);
+    if( jl_unbox_int64(n) <= 1 ) {
+        jl_call2(fun_detete, g_barrier, val);
+    } else {
+        n = jl_call2(fun_plus, n, one);
+        jl_call3(fun_setindex, g_barrier, n, val);
+    }
+}
+
+// Evaluate value and put it global table to prevent GC.
+static jl_value_t* eval_and_stash(const char* expr) {
+    jl_value_t* x = 0;
+    Julia::LL::GCRoot1 gc(&x);
+    x = jl_eval_string(expr); Julia::rethrow();
+    stash_value(x);
+    return x;
+}
+
 
 // ================================================================
 // Implementation details
 // ================================================================
-namespace Julia::Impl {
-
-    jl_value_t* call(jl_function_t* fun) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_call0(fun);
-        rethrow();
-        return r;
-    }
-
-    jl_value_t* call(jl_function_t* fun, jl_value_t* a) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_call1(fun, a);
-        rethrow();
-        return r;
-    }
-
-    jl_value_t* call(jl_function_t* fun, jl_value_t* a, jl_value_t* b) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_call2(fun, a, b);
-        rethrow();
-        return r;
-    }
-
-    jl_value_t* call(jl_function_t* fun, jl_value_t* a, jl_value_t* b, jl_value_t* c) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_call3(fun, a, b, c);
-        rethrow();
-        return r;
-    }
-
-    jl_value_t* make_tuple() {
-        return call((jl_function_t*)fun_tuple);
-    }
-
-    jl_value_t* make_tuple(jl_value_t* a) {
-        return call((jl_function_t*)fun_tuple, a);
-    }
-
-    jl_value_t* make_tuple(jl_value_t* a, jl_value_t* b) {
-        return call((jl_function_t*)fun_tuple, a, b);
-    }
-
-    jl_value_t* make_tuple(jl_value_t* a, jl_value_t* b, jl_value_t* c) {
-        return call((jl_function_t*)fun_tuple, a, b, c);
-    }
-
-    jl_value_t* wrap_c_function_0_worker(
-        jl_value_t*        c_funptr,
-        const std::string& return_ty
-        )
-    {
-        jl_value_t* f = 0;
-        jl_value_t* r = 0;
-        GCRoot2 root(&f, &r);
-        f = jl_eval_string(("f -> () -> ccall(f, "+return_ty+", (), x1)").c_str());
-        rethrow();
-        r = call((jl_function_t*)f, c_funptr);
-        return r;
-    }
-    
-    jl_value_t* wrap_c_function_1_worker(
-        jl_value_t*        c_funptr,
-        const std::string& return_ty,
-        const std::string& paramA
-        )
-    {
-        jl_value_t* f = 0;
-        jl_value_t* r = 0;
-        GCRoot2 root(&f, &r);
-        f = jl_eval_string(("f -> x1 -> ccall(f, "+return_ty+", ("+paramA+",), x1)").c_str());
-        rethrow();
-        r = call((jl_function_t*)f, c_funptr);
-        return r;
-    }    
-
-    jl_value_t* wrap_c_function_2_worker(
-        jl_value_t*        c_funptr,
-        const std::string& return_ty,
-        const std::string& paramA,
-        const std::string& paramB
-        )
-    {
-        jl_value_t* f = 0;
-        jl_value_t* r = 0;
-        GCRoot2 root(&f, &r);
-        f = jl_eval_string(
-            ("f -> (x1,x2) -> ccall(f, "+return_ty+", ("+paramA+","+paramB+"), x1, x2)").c_str());
-        rethrow();
-        r = call((jl_function_t*)f, c_funptr);
-        return r;
-    }    
-};
-
-
-namespace Julia {
-    using Impl::GCRoot1;
-    using Impl::GCRoot2;
-    using Impl::GCRoot3;
-    using Impl::GCRoot4;;
-
-    
+namespace Julia::LL::Impl {
     // Internal class which puts Julia value into ObjectIdDict to
     // prevent their garbage collection.
     class GCBarrier {
@@ -178,45 +92,47 @@ namespace Julia {
         m_value(val)
     {
         stash_value(val);
-        // Just in case we put parameter into GC root to prevent its
-        // accidental collection
-        jl_value_t* zero = 0;
-        jl_value_t* one  = 0;
-        jl_value_t* n    = 0;
-        GCRoot4 gc(&zero, &one, &n, &val);
-        // Constants;
-        zero = jl_box_int64(0);
-        one  = jl_box_int64(1);
-        // Increase counter in map preventing GC by 1
-        n = jl_call3(fun_get, g_barrier, m_value, zero); rethrow();
-        n = jl_call2(fun_plus, n, one);                  rethrow();
-        jl_call3(fun_setindex, g_barrier, n, m_value);   rethrow();
     }
 
     GCBarrier::~GCBarrier() {
-        jl_value_t* zero = 0;
-        jl_value_t* one  = 0;
-        jl_value_t* n    = 0;
-        GCRoot3 gc(&zero, &one, &n);
-        // Constants;
-        zero = jl_box_int64(0);
-        one  = jl_box_int64(-1);
-        // Decrease counter and remove value from map
-        //
-        // NOTE: We must not throw exceptions from destructor.
-        //       Throwing in the destructor is absolutely
-        //       haram!
-        n = jl_call3(fun_get, g_barrier, m_value, zero);
-        if( jl_unbox_int64(n) <= 1 ) {
-            jl_call2(fun_detete, g_barrier, m_value);
-        } else {
-            n = jl_call2(fun_plus, n, one);
-            jl_call3(fun_setindex, g_barrier, n, m_value);
+        throw_away(m_value);
+    }
+
+
+    jl_value_t* wrapWorker( void* callback, void* fBox)
+    {
+        jl_value_t* funWrapper = 0;
+        jl_value_t* funReal    = 0;
+        jl_value_t* closure    = 0;
+        GCRoot3 gc(&funWrapper, &funReal, &closure);
+
+        funWrapper = jl_box_voidpointer( (void*)callback );
+        funReal    = jl_box_voidpointer( fBox );
+        closure    = jl_call2( (jl_function_t*)fun_callback2,
+                               funWrapper,
+                               funReal);
+        return closure;
+    }
+}
+
+namespace Julia {
+    using LL::GCRoot1;
+    using LL::GCRoot2;
+    using LL::GCRoot3;
+    using LL::GCRoot4;
+
+    double Convert<double>::fromJulia(jl_value_t* val) {
+        if( jl_typeis(val, jl_float32_type) ) {
+            return jl_unbox_float32(val);
         }
+        if( jl_typeis(val, jl_float64_type) ) {
+            return jl_unbox_float64(val);
+        }
+        throw LL::ConversionError();
     }
 
     Value::Value(jl_value_t* val) :
-        m_value(new GCBarrier(val))
+        m_value(new LL::Impl::GCBarrier(val))
     {}
 
     jl_value_t* Value::juliaValue() const {
@@ -238,19 +154,11 @@ namespace Julia {
         fun_plus     = jl_get_global(jl_main_module, jl_symbol("+"));
         fun_print    = jl_get_global(jl_main_module, jl_symbol("println"));
         fun_typeof   = jl_get_global(jl_main_module, jl_symbol("typeof"));
-        fun_tuple    = jl_get_global(jl_main_module, jl_symbol("tuple"));
-        // Read types
-        ty_Float64   = jl_eval_string("Float64");
         // Create GC barrier
-        g_barrier = jl_eval_string("IdDict{Any,Int64}()");
-        // Set up callbacks
-        // callback_simple_1 = (jl_function_t*)eval_and_stash(
-        //     "(f,r,p) -> (a) -> ccall(f,r,(p,),a)");
-        // callback_simple_2 = (jl_function_t*)eval_and_stash(
-        //     "(r,p) -> (a,b) -> ccall(r,p,a,b)");
-        rethrow();
+        g_barrier = jl_eval_string("IdDict{Any,Int64}()"); rethrow();
+        fun_callback2 = eval_and_stash(
+            "(wrapper,fun) -> (a,b) -> ccall(wrapper, Any, (Ptr{Cvoid},Any,Any), fun,a,b)");
     }
-
 
     void rethrow(const char* errmsg) {
         jl_value_t* val = jl_exception_occurred();
@@ -271,18 +179,7 @@ namespace Julia {
     }
 
     // ----------------------------------------------------------------
-    
-    jl_value_t* Convert<double>::juliaType() {
-        return ty_Float64;
-    }
-    
-    static std::string tyname_Float64 = "Float64";
-    const std::string& Convert<double>::juliaTypeName() {
-        return tyname_Float64;
-    };
 
-    // ----------------------------------------------------------------
-    
     jl_value_t* array_from_vec(const std::vector<double>& vec) {
         jl_value_t* ty  = 0;
         jl_array_t* arr = 0;
@@ -322,34 +219,12 @@ namespace Julia {
         return reinterpret_cast<jl_function_t*>(j_funval);
     }
 
-    jl_function_t* make_callback(int nparam, double (*fun)(double*)) {
-        // jl_function_t* j_fun  = 0;
-        // jl_value_t*    j_npar = 0;
-        // jl_value_t*    j_fptr = 0;
-        // GCRoot3 gc((jl_value_t**)(&j_fun), &j_npar, &j_fptr);
-        // //
-        // j_npar = jl_box_int64(nparam);
-        // j_fptr = jl_box_voidpointer((void*)fun);
-        // j_fun  = jl_call2(callback_c_raw, j_npar, j_fptr);
-        // rethrow();
-        // return j_fun;
-        return 0;
-    }
-
     void println(jl_value_t* val) {
         jl_call1(fun_print, val);
     }
 
     void println(const Value& val) {
         jl_call1(fun_print, val.juliaValue());
-    }
-
-    jl_value_t* eval_string(const char* str) {
-        jl_value_t* r = 0;
-        GCRoot1 gc(&r);
-        r = jl_eval_string(str);
-        rethrow();
-        return r;
     }
 }
 

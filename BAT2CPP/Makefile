@@ -25,4 +25,4 @@ test: ${OBJS}
 %.o : %.cpp
 	${CXX} -c -o $@ ${CXXFLAGS} $<
 
-${OBJS} : BAT2.hpp julia-cpp.hpp julia-cpp-impl.hpp
+${OBJS} : BAT2.hpp julia-cpp.hpp
