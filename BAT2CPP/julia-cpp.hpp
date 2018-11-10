@@ -121,14 +121,86 @@ namespace Julia {
 
     // Specialization for double
     template<>
+    struct Convert<float> {
+        typedef float Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_float32(x);
+        }
+    };
+    template<>
     struct Convert<double> {
         typedef double Repr;
-        static double      fromJulia(jl_value_t*);
-        static jl_value_t* toJulia  (double x) {
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
             return jl_box_float64(x);
         }
     };
 
+    template<>
+    struct Convert<int8_t> {
+        typedef int8_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_int8(x);
+        }
+    };
+    template<>
+    struct Convert<int16_t> {
+        typedef int16_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_int16(x);
+        }
+    };
+    template<>
+    struct Convert<int32_t> {
+        typedef int32_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_int32(x);
+        }
+    };
+    template<>
+    struct Convert<int64_t> {
+        typedef int64_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_int64(x);
+        }
+    };
+    template<>
+    struct Convert<uint8_t> {
+        typedef uint8_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_uint8(x);
+        }
+    };
+    template<>
+    struct Convert<uint16_t> {
+        typedef uint16_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_uint16(x);
+        }
+    };
+    template<>
+    struct Convert<uint32_t> {
+        typedef uint32_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_uint32(x);
+        }
+    };
+    template<>
+    struct Convert<uint64_t> {
+        typedef uint64_t Repr;
+        static Repr        fromJulia(jl_value_t*);
+        static jl_value_t* toJulia  (Repr x) {
+            return jl_box_uint64(x);
+        }
+    };
 
     // Represents pointer to value in Julia heap. It won't be garbage
     // collected as long as object is alive.

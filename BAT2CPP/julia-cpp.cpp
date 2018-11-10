@@ -2,6 +2,13 @@
 
 #include <iostream>
 
+// Well.. with no better option let turn to CPP
+#define CHECK_UNBOX_INT(n) \
+    if( jl_typeis(val, jl_int##n##_type) ) { return jl_unbox_int##n(val); }
+#define CHECK_UNBOX_UINT(n) \
+    if( jl_typeis(val, jl_uint##n##_type) ) { return jl_unbox_uint##n(val); }
+
+
 // Set of Julia values which should be prevented from GC
 static jl_value_t*     g_barrier = 0;
 // GC root for value above. Here it's allocated on heap
@@ -130,6 +137,74 @@ namespace Julia {
         }
         throw LL::ConversionError();
     }
+
+    float Convert<float>::fromJulia(jl_value_t* val) {
+        if( jl_typeis(val, jl_float32_type) ) {
+            return jl_unbox_float32(val);
+        }
+        throw LL::ConversionError();
+    }
+
+    uint8_t Convert<uint8_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_UINT(8);
+        throw LL::ConversionError();
+    }
+    int8_t Convert<int8_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_INT (8);
+        throw LL::ConversionError();
+    }
+
+    uint16_t Convert<uint16_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_INT (8);
+        CHECK_UNBOX_UINT(8);
+        CHECK_UNBOX_UINT(16);
+        throw LL::ConversionError();
+    }
+    int16_t Convert<int16_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_INT (8);
+        CHECK_UNBOX_UINT(8);
+        CHECK_UNBOX_INT (16);
+        throw LL::ConversionError();
+    }
+
+    uint32_t Convert<uint32_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_INT (8);
+        CHECK_UNBOX_UINT(8);
+        CHECK_UNBOX_INT (16);
+        CHECK_UNBOX_UINT(16);
+        CHECK_UNBOX_UINT(32);
+        throw LL::ConversionError();
+    }
+    int32_t Convert<int32_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_INT (8);
+        CHECK_UNBOX_UINT(8);
+        CHECK_UNBOX_INT (16);
+        CHECK_UNBOX_UINT(16);
+        CHECK_UNBOX_INT (32);
+        throw LL::ConversionError();
+    }
+
+    uint64_t Convert<uint64_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_INT (8);
+        CHECK_UNBOX_UINT(8);
+        CHECK_UNBOX_INT (16);
+        CHECK_UNBOX_UINT(16);
+        CHECK_UNBOX_INT (32);
+        CHECK_UNBOX_UINT(32);
+        CHECK_UNBOX_UINT(64);
+        throw LL::ConversionError();
+    }
+    int64_t Convert<int64_t>::fromJulia(jl_value_t* val) {
+        CHECK_UNBOX_INT (8);
+        CHECK_UNBOX_UINT(8);
+        CHECK_UNBOX_INT (16);
+        CHECK_UNBOX_UINT(16);
+        CHECK_UNBOX_INT (32);
+        CHECK_UNBOX_UINT(32);
+        CHECK_UNBOX_INT (64);
+        throw LL::ConversionError();
+    }
+
 
     Value::Value(jl_value_t* val) :
         m_value(new LL::Impl::GCBarrier(val))
